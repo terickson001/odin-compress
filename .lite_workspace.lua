@@ -1,0 +1,1 @@
+return {["type"]="leaf",["active_view"]=1,["views"]={[1]={["selection"]={[1]=41,[2]=2,[3]=41,[4]=2},["text"]=false,["filename"]="zlib/common.odin",["type"]="doc",["active"]=true,["scroll"]={["y"]=600,["x"]=0}},[2]={["selection"]={[1]=143,[2]=17,[3]=143,[4]=17},["text"]=false,["filename"]="zlib/inflate.odin",["type"]="doc",["active"]=false,["scroll"]={["y"]=827.5,["x"]=0}}}}
