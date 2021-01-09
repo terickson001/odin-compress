@@ -129,8 +129,10 @@ _zlib_err :: proc(test: bool, message: string, loc := #caller_location) -> bool
 
 _zread_u8 :: inline proc(using z_buff: ^Buffer, loc := #caller_location) -> u8
 {
-    if data >= data_end do
+    if data >= data_end 
+    {
         return 0;
+    }
     
     ret := data^;
     data = mem.ptr_offset(data, 1);
@@ -139,8 +141,10 @@ _zread_u8 :: inline proc(using z_buff: ^Buffer, loc := #caller_location) -> u8
 
 _zread_sized :: inline proc(using z_buff: ^Buffer, $T: typeid, loc := #caller_location) -> T
 {
-    if mem.ptr_offset(data, size_of(T)) > data_end do
+    if mem.ptr_offset(data, size_of(T)) > data_end 
+    {
         return 0;
+    }
     
     ret := (cast(^T)(data))^;
     data = mem.ptr_offset(data, size_of(T));
@@ -193,22 +197,28 @@ destroy_huffman :: proc(huff: ^Huffman)
 _get_max_bit_length :: proc(lengths: []byte) -> byte
 {
     max_length := byte(0);
-    for l in lengths do
+    for l in lengths 
+    {
         max_length = max(max_length, l);
+    }
     return max_length;
 }
 
 @private
 _get_bit_length_count :: proc(counts: []u32, lengths: []byte, max_length: byte)
 {
-    for l in lengths do
+    for l in lengths 
+    {
         counts[l] += 1;
+    }
     counts[0] = 0;
     
     for i in 1..<(max_length)
     {
         if _zlib_err(counts[i] > (1 << i), "Bad Sizes")
-            do return;
+        {
+            return;
+        }
     }
 }
 

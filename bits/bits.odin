@@ -25,10 +25,14 @@ append_bits :: proc(using str: ^String, val: $T, bitn: u32, loc := #caller_locat
     for to_write > 0
     {
         size := min(8-biti, to_write);
-        if biti > 0 do
+        if biti > 0 
+        {
             buffer[bytei] |= byte(slice(val, bitn-to_write, size) << biti);
-        else do
+        }
+        else 
+        {
             builtin.append(&buffer, byte(slice(val, bitn-to_write, size)));
+        }
         
         biti += size;
         if biti > 7
@@ -44,14 +48,18 @@ append_bits :: proc(using str: ^String, val: $T, bitn: u32, loc := #caller_locat
 
 append_bytes :: proc(using str: ^String, val: $T, loc := #caller_location) where intrinsics.type_is_integer(T)
 {
-    for i in 0..<size_of(T) do
+    for i in 0..<size_of(T) 
+    {
         append_bits(str, byte(val >> (u32(size_of(T)-i-1)*8)), 8, loc);
+    }
 }
 
 append_slice :: proc(using str: ^String, bytes: []byte, loc := #caller_location)
 {
-    for b in bytes do
+    for b in bytes 
+    {
         append_bits(str, b, 8, loc);
+    }
 }
 
 append :: proc{append_bits, append_bytes, append_slice};
@@ -64,8 +72,10 @@ append_byte :: proc(using str: ^String, val: byte)
 
 next_byte :: proc(using str: ^String)
 {
-    if biti > 0 do
+    if biti > 0 
+    {
         append(str, 0, 8-biti);
+    }
 }
 
 slice_reverse :: proc(val: $T, offset, size: u32) -> T where intrinsics.type_is_integer(T)

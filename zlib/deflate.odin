@@ -28,8 +28,10 @@ compress :: proc(data: []byte, level: u32) -> []byte
         
         key := (^u32)(&data[i])^ & 0x00ff_ffff;
         matches := hashtable[key];
-        if hashtable[key].buff == nil do
+        if hashtable[key].buff == nil 
+        {
             hashtable[key] = make_ring([]byte, level*2);
+        }
         
         // Find best jump location
         for _, j in 0..<(hashtable[key].count)
@@ -100,8 +102,10 @@ count_matching :: proc(data, datb: []byte) -> u32
     i := u32(0);
     for i < u32(min(len(data), len(datb))) && i < 257
     {
-        if data[i] != datb[i] do
+        if data[i] != datb[i] 
+        {
             break;
+        }
         i += 1;
     }
     return i;
@@ -121,10 +125,14 @@ ring_push :: proc(using ring: ^Ring_Buffer($T), val: T)
     buff[idx] = val;
     idx += 1;
     
-    if count < u32(len(buff)) do
+    if count < u32(len(buff)) 
+    {
         count += 1;
-    if idx >= u32(len(buff)) do
+    }
+    if idx >= u32(len(buff)) 
+    {
         idx = 0;
+    }
 }
 
 @(private="file")
@@ -145,27 +153,35 @@ delete_ring :: proc(using ring: ^Ring_Buffer($T))
 push_huffman_code :: proc(buffer: ^bits.String, length, dist: u32, huff_lit, huff_dist: ^Huffman)
 {
     length_code, dist_code: u32;
-    for length > base_lengths[length_code+1]-1 do
+    for length > base_lengths[length_code+1]-1 
+    {
         length_code += 1;
-    for dist > base_dists[dist_code+1]-1 do
+    }
+    for dist > base_dists[dist_code+1]-1 
+    {
         dist_code += 1;
+    }
     
     length_eb := u32(length_extra_bits[length_code]);
     dist_eb := u32(dist_extra_bits[dist_code]);
     
     encode_huffman(buffer, length_code+257, huff_lit);
-    if length_eb > 0 do
+    if length_eb > 0 
+    {
         bits.append(buffer, length - base_lengths[length_code], length_eb);
+    }
     
     encode_huffman(buffer, dist_code, huff_dist);
-    if dist_eb > 0 do
+    if dist_eb > 0 
+    {
         bits.append(buffer, dist - base_dists[dist_code], dist_eb);
+    }
     
 }
 
 encode_huffman :: proc(buffer: ^bits.String, val: u32, using huff: ^Huffman)
 {
-    bits.append_reverse(buffer, codes[val], u32(lengths[val]));
+    // bits.append_reverse(buffer, codes[val], u32(lengths[val]));
 }
 
 adler32 :: proc(data: []byte) -> u32

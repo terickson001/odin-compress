@@ -11,7 +11,7 @@ read_block :: proc(data: []byte) -> Buffer
 {
     when ODIN_DEBUG do profile.scoped_zone();
     z_buff := Buffer{};
-    z_buff.data = &data[0];
+    z_buff.data = raw_data(data);
     z_buff.data_end = mem.ptr_offset(z_buff.data, len(data));
     z_buff.cmf = _zread_u8(&z_buff);
     z_buff.extra_flags = _zread_u8(&z_buff);
@@ -33,8 +33,10 @@ decompress :: proc(using z_buff: ^Buffer)
     
     for !final
     {
-        if bits_remaining < 3 do
+        if bits_remaining < 3 
+        {
             load_bits(z_buff);
+        }
         final = bool(read_bits(z_buff, 1));
         type  = read_bits(z_buff, 2);
         
@@ -62,15 +64,19 @@ decompress :: proc(using z_buff: ^Buffer)
 
 
 quick_append :: inline proc(arr: ^[dynamic]byte, val: byte)
+#no_bounds_check
 {
     a := (^rt.Raw_Dynamic_Array)(arr);
-    if a.len == a.cap do
+    if a.len == a.cap 
+    {
         _ = reserve(arr, cap(arr)*2);
+    }
     a.len += 1;
     arr[a.len-1] = val;
 }
 
 inflate :: proc(using z_buff: ^Buffer)
+#no_bounds_check
 {
     //     when ODIN_DEBUG do profile.scoped_zone();
     
@@ -95,8 +101,10 @@ inflate :: proc(using z_buff: ^Buffer)
             
             back_pointer_index := u32(len(out)) - distance_length;
             //             a := (^rt.Raw_Dynamic_Array)(&out);
-            //             for a.len+int(duplicate_length) >= a.cap do
-            //                 _ = reserve(&out, a.cap*2);
+            //             for a.len+int(duplicate_length) >= a.cap 
+            {
+                //                 _ = reserve(&out, a.cap*2);
+            }
             //             mem.copy(&out[a.len-1], &out[back_pointer_index], int(duplicate_length));
             //             a.len += int(duplicate_length);
             for duplicate_length > 0
@@ -111,6 +119,7 @@ inflate :: proc(using z_buff: ^Buffer)
 }
 
 compute_huffman :: proc(using z_buff: ^Buffer)
+#no_bounds_check
 {
     hlit  := u32(read_bits(z_buff, 5)) + 257;
     hdist := u32(read_bits(z_buff, 5)) + 1;
@@ -118,8 +127,10 @@ compute_huffman :: proc(using z_buff: ^Buffer)
     
     huff_clen_lens := [19]byte{};
     
-    for i in 0..<(hclen) do
+    for i in 0..<(hclen) 
+    {
         huff_clen_lens[HUFFMAN_ALPHABET[i]] = byte(read_bits(z_buff, 3));
+    }
     
     huff_clen := _build_huffman_code(huff_clen_lens[:]);
     huff_lit_dist_lens := make([]byte, hlit+hdist);
@@ -129,7 +140,9 @@ compute_huffman :: proc(using z_buff: ^Buffer)
     {
         decoded_value := _decode_huffman(z_buff, huff_clen);
         if _zlib_err(decoded_value < 0 || decoded_value > 18, "Bad codelengths")
-            do return;
+        {
+            return;
+        }
         if decoded_value < 16
         {
             huff_lit_dist_lens[code_index] = byte(decoded_value);
@@ -153,28 +166,35 @@ compute_huffman :: proc(using z_buff: ^Buffer)
         }
         
         if _zlib_err(hlit+hdist - code_index < repeat_count, "Bad codelengths")
-            do return;
+        {
+            return;
+        }
         
         mem.set(&huff_lit_dist_lens[code_index], code_length_to_repeat, int(repeat_count));
         code_index += repeat_count;
     }
     
     if _zlib_err(code_index != hlit+hdist, "Bad codelengths")
-        do return;
+    {
+        return;
+    }
     
     huff_lit  = _build_huffman_code(huff_lit_dist_lens[:hlit]);
     huff_dist = _build_huffman_code(huff_lit_dist_lens[hlit:]);
 }
 
 _decode_huffman_slow :: proc(using z_buff: ^Buffer, using huff: ^Huffman, loc := #caller_location) -> u32
+#no_bounds_check
 {
     //     when ODIN_DEBUG do profile.scoped_zone();
     k := u32(bits.reverse(u16(bit_buffer), 16));
     s := u32(FAST_BITS+1);
     for ;;s+=1
     {
-        if k < max_code[s] do
+        if k < max_code[s] 
+        {
             break;
+        }
     }
     b := u16(k  >> (16-s)) - first_code[s] + first_symbol[s];
     bit_buffer >>= u32(s);
@@ -182,10 +202,13 @@ _decode_huffman_slow :: proc(using z_buff: ^Buffer, using huff: ^Huffman, loc :=
     return u32(value[b]);
 }
 
-_decode_huffman :: inline proc(using z_buff: ^Buffer, using huff: ^Huffman, loc := #caller_location) -> u32
+_decode_huffman :: inline  proc(using z_buff: ^Buffer, using huff: ^Huffman, loc := #caller_location) -> u32
+#no_bounds_check
 {
-    if bits_remaining < 16 do
+    if bits_remaining < 16 
+    {
         load_bits(z_buff);
+    }
     b := fast_table[bit_buffer & FAST_MASK];
     if b != 0
     {
@@ -197,6 +220,7 @@ _decode_huffman :: inline proc(using z_buff: ^Buffer, using huff: ^Huffman, loc 
     return _decode_huffman_slow(z_buff, huff, loc);
 }
 
+#no_bounds_check
 quick_append_ptr :: inline proc(arr: ^[dynamic]byte, data: ^byte, n: int)
 {
     a := (^rt.Raw_Dynamic_Array)(arr);
@@ -210,22 +234,29 @@ quick_append_ptr :: inline proc(arr: ^[dynamic]byte, data: ^byte, n: int)
     a.len += n;
 }
 
+#no_bounds_check
 uncompressed :: proc(using z_buff: ^Buffer)
 {
     when ODIN_DEBUG do profile.scoped_zone();
     header := [4]byte{};
-    if bits_remaining & 7 > 0 do
+    if bits_remaining & 7 > 0 
+    {
         read_bits(z_buff, bits_remaining & 7); // Discard
+    }
     
-    for _, i in header do
+    for _, i in header 
+    {
         header[i] = u8(read_bits(z_buff, 8));
+    }
     assert(bits_remaining == 0);
     
     length  := u32(header[1]) * 256 + u32(header[0]);
     nlength := u32(header[3]) * 256 + u32(header[2]);
     if _zlib_err(nlength != (length ~ 0xffff), "Corrupt Zlib") ||
         _zlib_err(length > u32(mem.ptr_sub(data_end, data)), "Read past buffer")
-        do return;
+    {
+        return;
+    }
     
     quick_append_ptr(&out, data, int(length));
     data = mem.ptr_offset(data, int(length));
@@ -238,42 +269,16 @@ load_bits :: inline proc(using z_buff: ^Buffer, loc := #caller_location)
         bit_buffer |= u64(_zread_u8(z_buff, loc)) << bits_remaining;
         bits_remaining += 8;
     }
-    //     room := min(int(size_of(bit_buffer)*8 - bits_remaining), mem.ptr_sub(data_end, data)*8);
-    //     for room > 8
-    //     {
-    //         if room == 64
-    //         {
-    //             bit_buffer = u64(_zread_sized(z_buff, u64));
-    //             bits_remaining = 64;
-    //             break;
-    //         }
-    //         else if room >= 32
-    //         {
-    //             bit_buffer = u64(_zread_sized(z_buff, u32)) << bits_remaining;
-    //             bits_remaining += 32;
-    //             room -= 32;
-    //         }
-    //         else if room >= 16
-    //         {
-    //             bit_buffer = u64(_zread_sized(z_buff, u16)) << bits_remaining;
-    //             bits_remaining += 16;
-    //             room -= 16;
-    //         }
-    //         else
-    //         {
-    //             bit_buffer = u64(_zread_u8(z_buff)) << bits_remaining;
-    //             bits_remaining += 8;
-    //             room -= 8;
-    //         }
-    //     }
 }
 
 read_bits :: proc(using z_buff: ^Buffer, size: u32) -> u32
 {
     res := u32(0);
     
-    if size > bits_remaining do
+    if size > bits_remaining 
+    {
         load_bits(z_buff);
+    }
     
     for i in 0..<(size)
     {

@@ -38,10 +38,14 @@ start_timed_section :: inline proc(name_override: string = "", loc := #caller_lo
     
     section: ^Timed_Section;
     name: string;
-    if name_override != "" do
+    if name_override != "" 
+    {
         name = name_override;
-    else do
+    }
+    else 
+    {
         name = loc.procedure;
+    }
     
     if PROFILER.current_section != nil
     {
@@ -80,8 +84,10 @@ start_timed_section :: inline proc(name_override: string = "", loc := #caller_lo
         }
     }
     
-    if PROFILER.current_section != nil do
+    if PROFILER.current_section != nil 
+    {
         PROFILER.current_section.total_time -= time.diff(profile_start_time, time.now());
+    }
     
     section.start_time = time.now();
     
@@ -96,22 +102,30 @@ end_timed_section :: inline proc(using section: ^Timed_Section)
     calls += 1;
     total_time += elapsed;
     PROFILER.current_section = section.parent;
-    if PROFILER.current_section != nil do
+    if PROFILER.current_section != nil 
+    {
         PROFILER.current_section.total_time -= time.diff(end_time, time.now());
+    }
 }
 
 @(private="file")
 print_section_info :: proc(using section: ^Timed_Section, level := 0)
 {
     percent: f64;
-    if parent != nil do
+    if parent != nil 
+    {
         percent = f64(total_time)/f64(parent.total_time);
-    else do
+    }
+    else 
+    {
         percent = 0;
+    }
     for _ in 0..level do fmt.printf("  ");
     fmt.printf("%s: {{%.2f%%, %fms}}\n", name, percent, (f64(total_time)/f64(calls)/f64(time.Millisecond)));
-    for child in children do
+    for child in children 
+    {
         print_section_info(child, level+1);
+    }
 }
 
 print_profiler_info :: proc()
@@ -119,7 +133,9 @@ print_profiler_info :: proc()
     using PROFILER;
     
     fmt.printf("\033[2J\033[H");
-    for section in sections do
+    for section in sections 
+    {
         print_section_info(section);
+    }
 }
 
