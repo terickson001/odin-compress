@@ -27,12 +27,12 @@ Timed_Section :: struct
 }
 
 @(deferred_out=end_timed_section)
-TIMED_SECTION :: inline proc(name_override: string = "", loc := #caller_location) -> ^Timed_Section
+TIMED_SECTION :: #force_inline proc(name_override: string = "", loc := #caller_location) -> ^Timed_Section
 {
     return start_timed_section(name_override, loc);
 }
 
-start_timed_section :: inline proc(name_override: string = "", loc := #caller_location) -> ^Timed_Section
+start_timed_section :: #force_inline proc(name_override: string = "", loc := #caller_location) -> ^Timed_Section
 {
     profile_start_time := time.now();
     
@@ -95,7 +95,7 @@ start_timed_section :: inline proc(name_override: string = "", loc := #caller_lo
     return section;
 }
 
-end_timed_section :: inline proc(using section: ^Timed_Section)
+end_timed_section :: #force_inline proc(using section: ^Timed_Section)
 {
     end_time := time.now();
     elapsed := time.diff(start_time, end_time);

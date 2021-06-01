@@ -63,7 +63,7 @@ decompress :: proc(using z_buff: ^Buffer)
 }
 
 
-quick_append :: inline proc(arr: ^[dynamic]byte, val: byte)
+quick_append :: #force_inline proc(arr: ^[dynamic]byte, val: byte)
 #no_bounds_check
 {
     a := (^rt.Raw_Dynamic_Array)(arr);
@@ -202,7 +202,7 @@ _decode_huffman_slow :: proc(using z_buff: ^Buffer, using huff: ^Huffman, loc :=
     return u32(value[b]);
 }
 
-_decode_huffman :: inline  proc(using z_buff: ^Buffer, using huff: ^Huffman, loc := #caller_location) -> u32
+_decode_huffman :: #force_inline proc(using z_buff: ^Buffer, using huff: ^Huffman, loc := #caller_location) -> u32
 #no_bounds_check
 {
     if bits_remaining < 16 
@@ -221,7 +221,7 @@ _decode_huffman :: inline  proc(using z_buff: ^Buffer, using huff: ^Huffman, loc
 }
 
 #no_bounds_check
-quick_append_ptr :: inline proc(arr: ^[dynamic]byte, data: ^byte, n: int)
+quick_append_ptr :: #force_inline proc(arr: ^[dynamic]byte, data: ^byte, n: int)
 {
     a := (^rt.Raw_Dynamic_Array)(arr);
     if a.len+n >= a.cap
@@ -262,7 +262,7 @@ uncompressed :: proc(using z_buff: ^Buffer)
     data = mem.ptr_offset(data, int(length));
 }
 
-load_bits :: inline proc(using z_buff: ^Buffer, loc := #caller_location)
+load_bits :: #force_inline proc(using z_buff: ^Buffer, loc := #caller_location)
 {
     for bits_remaining <= (size_of(bit_buffer)-1)*8
     {

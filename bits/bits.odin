@@ -101,7 +101,7 @@ append_reverse :: proc(using str: ^String, val: $T, bitn: u32, loc := #caller_lo
     append(str, reversed, bitn, loc);
 }
 
-reverse :: inline proc(val: u16, bits: u16) -> u16
+reverse :: #force_inline proc(val: u16, bits: u16) -> u16
 {
     n := val;
     n = ((n & 0xAAAA) >>  1) | ((n & 0x5555) << 1);

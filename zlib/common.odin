@@ -127,7 +127,7 @@ _zlib_err :: proc(test: bool, message: string, loc := #caller_location) -> bool
     return test;
 }
 
-_zread_u8 :: inline proc(using z_buff: ^Buffer, loc := #caller_location) -> u8
+_zread_u8 :: #force_inline proc(using z_buff: ^Buffer, loc := #caller_location) -> u8
 {
     if data >= data_end 
     {
@@ -139,7 +139,7 @@ _zread_u8 :: inline proc(using z_buff: ^Buffer, loc := #caller_location) -> u8
     return ret;
 }
 
-_zread_sized :: inline proc(using z_buff: ^Buffer, $T: typeid, loc := #caller_location) -> T
+_zread_sized :: #force_inline proc(using z_buff: ^Buffer, $T: typeid, loc := #caller_location) -> T
 {
     if mem.ptr_offset(data, size_of(T)) > data_end 
     {
